@@ -189,7 +189,7 @@ if (typeof UDAPluginSDK === 'undefined') {
 			script.src = url;
 			document.getElementsByTagName("head")[0].appendChild(script);
 		},
-		loadOtherScript: function(url) {
+		loadOtherScript: function(url, checkTotalScripts=true) {
 			var script = document.createElement("script");
 			script.type = "text/javascript";
 			script.src = url;
@@ -198,7 +198,7 @@ if (typeof UDAPluginSDK === 'undefined') {
 					if (script.readyState === "loaded" || script.readyState === "complete"){
 						script.onreadystatechange = null;
 						UDAPluginSDK.totalotherScriptsCompleted++;
-						if (UDAPluginSDK.totalotherScriptsCompleted === UDAPluginSDK.totalotherScripts) {
+						if (checkTotalScripts && UDAPluginSDK.totalotherScriptsCompleted === UDAPluginSDK.totalotherScripts) {
 							UDAPluginSDK.allReady();
 						}
 					}
@@ -206,7 +206,7 @@ if (typeof UDAPluginSDK === 'undefined') {
 			} else {
 				script.onload = function(){
 					UDAPluginSDK.totalotherScriptsCompleted++;
-					if (UDAPluginSDK.totalotherScriptsCompleted === UDAPluginSDK.totalotherScripts) {
+					if (checkTotalScripts && UDAPluginSDK.totalotherScriptsCompleted === UDAPluginSDK.totalotherScripts) {
 						UDAPluginSDK.allReady();
 					}
 				};
@@ -244,6 +244,8 @@ if (typeof UDAPluginSDK === 'undefined') {
 				this.loadOtherScript(this.extensionpath+"js/intro.min.js");
 				this.loadCssScript(this.extensionpath+"css/introjs.min.css");
 			}*/
+			this.loadCssScript(this.extensionpath+"css/custom/"+window.location.host+".css");
+			this.loadOtherScript(this.extensionpath+"js/custom/"+window.location.host+".js", false);
 		},
 		allReady: function() {
 			// execute the parsing method after everything is ready.
@@ -1494,13 +1496,6 @@ if (typeof UDAPluginSDK === 'undefined') {
 
 			if(this.recording && this.cancelRecordingDuringRecordingNodes.indexOf(node.nodeName.toLowerCase()) !== -1) {
 				alert('Sorry currently we do not support this '+node.nodeName+' selector. Please re-record the sequence without selecting '+node.nodeName+' selector');
-				this.recording=false;
-				this.cancelrecordingsequence();
-				this.showadvancedhtml();
-				return ;
-			} else if(this.recording && (node.parentNode && node.parentNode.hasAttribute("ng-controller") && node.parentNode.getAttribute("ng-controller")==='recognize_modal')) {
-				// fix for nominate recording functionality.
-				alert('Sorry currently we do not support this Nominate feature. Please re-record the sequence without selecting Nominate feature');
 				this.recording=false;
 				this.cancelrecordingsequence();
 				this.showadvancedhtml();
