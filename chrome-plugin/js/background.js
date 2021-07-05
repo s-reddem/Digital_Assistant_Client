@@ -2,8 +2,8 @@
 
 var updatedata=false;
 var UDADebug=false; //this variable exists in links.js file also
-var apihost=(UDADebug)?"http://localhost:11080/voiceapi":"https://voicetest.nistapp.com/voiceapi"; //this variable exists in links.js file also
-var cookiename="nist-voice-usersessionid";
+var apihost=(UDADebug)?"http://localhost:11080/voiceapi":"https://udantest.nistapp.ai/voiceapi"; //this variable exists in links.js file also
+var cookiename="uda-sessiondata";
 var activetabs=[];
 var sessionkey="";
 var sessiondata={sessionkey:"",authenticated:false,authenticationsource:"",authdata:{}};
@@ -31,7 +31,11 @@ function sendsessiondata(sendaction="UDAUserSessionData",message=''){
 		});
 	} else {
 		chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-			chrome.tabs.sendMessage(tabs[0].id, {action: sendaction, data: JSON.stringify(sessiondata)});
+			if(tabs.length>0) {
+				chrome.tabs.sendMessage(tabs[0].id, {action: sendaction, data: JSON.stringify(sessiondata)});
+			} else {
+				console.log('failed to send session data');
+			}
 		});
 	}
 }
@@ -42,10 +46,15 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 	{
 		chrome.storage.local.get([cookiename],function (storedsessiondata) {
 			if(chrome.runtime.lastError){
-
+				console.log('failed to read stored session data');
 			} else {
-				if(storedsessiondata.hasOwnProperty("sessionkey")){
+				// console.log(storedsessiondata[cookiename]);
+				// looks like chrome storage might have changed so changing the reading the data has been changed. For to work with old version have added the new code to else if statement
+				if(storedsessiondata.hasOwnProperty("sessionkey") && storedsessiondata["sessionkey"]){
 					sessiondata=storedsessiondata;
+					sendsessiondata();
+				} else if(storedsessiondata.hasOwnProperty(cookiename) && storedsessiondata[cookiename].hasOwnProperty("sessionkey") && storedsessiondata[cookiename]["sessionkey"]){
+					sessiondata=storedsessiondata[cookiename];
 					sendsessiondata();
 				} else {
 					getsessionkey();
