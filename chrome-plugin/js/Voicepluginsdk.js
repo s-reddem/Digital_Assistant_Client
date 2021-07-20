@@ -113,7 +113,7 @@ if (typeof UDAPluginSDK === 'undefined') {
 			'baseURI','isConnected','ariaPressed', 'aria-pressed', 'nodePosition', 'outerHTML', 'innerHTML', 'style',
 			'aria-controls', 'aria-activedescendant', 'ariaExpanded', 'autocomplete', 'aria-expanded', 'aria-owns', 'formAction',
 			'ng-star-inserted', 'ng-star', 'aria-describedby', 'width', 'height', 'x', 'y', 'selectionStart', 'selectionEnd', 'required', 'validationMessage', 'selectionDirection',
-			'naturalWidth', 'naturalHeight', 'complete', '_indexOf'
+			'naturalWidth', 'naturalHeight', 'complete', '_indexOf', 'value', 'defaultValue'
 		],
 		innerTextWeight: 5,
 		logLevel: UDALogLevel,
@@ -264,10 +264,10 @@ if (typeof UDAPluginSDK === 'undefined') {
 			* */
 			if(typeof Popper === 'undefined'){
 				this.totalotherScripts++;
-				this.loadOtherScript("https://unpkg.com/@popperjs/core@2");
+				this.loadOtherScript("https://unpkg.com/@popperjs/core@2.9.2/dist/umd/popper.min.js");
 			} else {
 				this.totalotherScripts++;
-				this.loadOtherScript("https://unpkg.com/@popperjs/core@2");
+				this.loadOtherScript("https://unpkg.com/@popperjs/core@2.9.2/dist/umd/popper.min.js");
 			}
 		},
 		allReady: function() {
@@ -1404,12 +1404,17 @@ if (typeof UDAPluginSDK === 'undefined') {
 				if(typeof node.target !== 'undefined' && node.target==='_blank'){
 					this.toggleautoplay(navigationCookieData);
 				} else {
-					link = true;
-					this.navigatedToNextPage.check = true;
-					this.navigatedToNextPage.url = node.href;
+					let hostname = window.location.protocol + "//" + window.location.host+window.location.pathname;
+					let href = node.href.substr(hostname.length);
+					if(href!=='' && href !== "#") {
+						link = true;
+						this.navigatedToNextPage.check = true;
+						this.navigatedToNextPage.url = node.href;
+					}
 				}
 			}
 			if(!link) {
+				console.log(node);
 				setTimeout(function(){UDAPluginSDK.showhtml();}, timeToInvoke);
 			}
 		},
@@ -1520,6 +1525,8 @@ if (typeof UDAPluginSDK === 'undefined') {
 			} else {
 				return ;
 			}
+
+			domjson.node.nodePosition.recordedscreensize = this.getScreenSize();
 
 			if(this.inarray(node.nodeName.toLowerCase(), this.ignoreNodesFromIndexing) !== -1 && this.customNameForSpecialNodes.hasOwnProperty(node.nodeName.toLowerCase())){
 				domjson.meta.displayText = this.customNameForSpecialNodes[node.nodeName.toLowerCase()];
@@ -1844,6 +1851,12 @@ if (typeof UDAPluginSDK === 'undefined') {
 			this.createstoragedata(this.recordingcookiename,JSON.stringify(recordingcookiedata));
 			var navcookiedata = {shownav: false, data: {}, autoplay:false, pause:false, stop:false, navcompleted:false, navigateddata:[],searchterm:''};
 			this.createstoragedata(this.navigationcookiename,JSON.stringify(navcookiedata));
+
+			let tooltipnodes = document.getElementsByClassName('uda-tooltip');
+			if (tooltipnodes.length > 0) {
+				$('.uda-tooltip').remove();
+				this.popperInstance.destroy();
+			}
 
 			//add analtytics
 			this.recordclick('recordingcancel',recordingcookiedata.domain);
