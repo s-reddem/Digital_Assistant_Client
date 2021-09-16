@@ -1,0 +1,33 @@
+{
+  "name": "Chrome Extension MV3",
+  "description": "Building a Chrome Extension MV3",
+  "version": "0.1.0",
+  "manifest_version": 3,
+  "icons": {
+    "16": "./images/uda-logo-16x16.png",
+    "32": "./images/uda-logo-32x32.png",
+    "48": "./images/uda-logo-48x48.png",
+    "128": "./images/uda-logo1-128x128.png"
+  },
+  "background": {
+    "service_worker": "./background.js"
+  },
+  "action": {
+    "default_popup": "./popup.html",
+    "default_icons": {
+      "16": "./images/uda-logo-16x16.png",
+      "32": "./images/uda-logo-32x32.png",
+      "48": "./images/uda-logo-48x48.png",
+      "128": "./images/uda-logo1-128x128.png"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*/"
+  ]
+}
