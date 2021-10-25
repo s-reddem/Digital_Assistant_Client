@@ -187,20 +187,24 @@ function ProcessCSPValues(value=''){
 }
 
 let onHeadersReceived = function (details) {
-	console.log(sessiondata);
-	console.log('Finding headers received');
-	console.log(details.responseHeaders);
+	console.log(details);
 
+	if(details.initiator === "https://app.vantagecircle.com"){
+		sessiondata.csp.enabled = true;
+	} else {
+		sessiondata.csp.enabled = false;
+	}
+	console.log(sessiondata.csp);
 	for (var i = 0; i < details.responseHeaders.length; i++) {
 		if (details.responseHeaders[i].name.toLowerCase() === 'content-security-policy') {
 			// details.responseHeaders[i].value = '';
-			console.log('Found CSP');
-			ProcessCSPValues(details.responseHeaders[i].value);
+			// console.log('Found CSP');
+			// ProcessCSPValues(details.responseHeaders[i].value);
 		}
 	}
 };
 
-let onHeaderFilter = { urls: ['*://*/*'], types: ['main_frame', 'sub_frame'] };
+let onHeaderFilter = { urls: ['*://*/*'], types: ['main_frame'] };
 
 chrome.webRequest.onHeadersReceived.addListener(
 	onHeadersReceived, onHeaderFilter, ['blocking', 'responseHeaders']

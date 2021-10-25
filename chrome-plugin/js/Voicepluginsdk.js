@@ -634,10 +634,10 @@ if (typeof UDAPluginSDK === 'undefined') {
 		},
 		//opening the UDA screen
 		openmodal:function(focus=false){
-        	if(this.sessiondata.csp.enabled && !this.sessiondata.csp.allowedUDAN){
+        	/*if(this.sessiondata.csp.enabled && !this.sessiondata.csp.allowedUDAN){
         		alert('UDAN is not allowed');
         		return;
-			}
+			}*/
 			if(this.sessiondata.authenticated) {
 				jQuery("#uda-btn").hide();
 				jQuery('#uda-html-container').show();
