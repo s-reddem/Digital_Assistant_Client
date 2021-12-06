@@ -358,31 +358,35 @@ var UDALinkScriptloaded = UDALinkScriptloaded || false;
         EventTarget.prototype.addEventListener = function (addEventListener) {
             return function () {
                 if (arguments[0] === "click") {
-                    UDAAddNewElement(this);
+                    UDAAddNode(this);
                 }
                 addEventListener.call(this, arguments[0], arguments[1], arguments[2]);
             }
         }(EventTarget.prototype.addEventListener);
 
-        // adding the clickobjects that were identified.
-        function UDAAddNewElement(node) {
+        // Detecting, de-duplication, filtering ClickObjects and finally collecting the relevant clickObjects.
+        function UDAAddNode(node) {
             try {
                 let clickObject = {element: node}
 
-                //checking whether the element is window or not
+                // Ignore if the element is a window
                 if (clickObject.element === window) {
                     return;
                 }
 
+                // Ignore certain irrelevant Node Types
                 let tag = clickObject.element.tagName;
                 if (tag && (tag.toLowerCase() === "body" || tag.toLowerCase() === "document" || tag.toLowerCase() === "window" || tag.toLowerCase() === "html")) {
                     return;
                 }
 
+                // Exclude all nodes of UDAN plugin (self)
+                // Todo Change name of 'nist-voice' to something more meaningful
                 if (clickObject.element.hasAttribute && clickObject.element.hasAttribute('nist-voice')) {
                     return;
                 }
 
+                // Detecting and Eliminating Duplicate nodes
                 for (var i = 0; i < UDAClickObjects.length; i++) {
                     if (UDAClickObjects[i].element.isSameNode(clickObject.element)) {
                         //todo, discuss , how better to call actions, if multiple actions should be stored, or selector better.
@@ -390,90 +394,95 @@ var UDALinkScriptloaded = UDALinkScriptloaded || false;
                     }
                 }
 
-                clickObject.id = UDAClickObjects.length;
+                // Push this object to stack (UDAClickObjects)
+                clickObject.id = UDAClickObjects.length; //Todo Can we remove this line altogether
                 UDAClickObjects.push(clickObject);
             } catch (e) {
-                let htmlelement = node.element.innerHTML;
-                UDAErrorLogger.error('Unable to process clickable object - '+htmlelement, e);
+                let htmlElement = node.element.innerHTML;
+                UDAErrorLogger.error('Unable to process clickable object - '+htmlElement, e);
             }
         }
 
-        // processing node from mutation and then send to clickbojects addition
+        // Verifying new node from mutation and if found to be clickable, then add to clickbOjects
         function UDAProcessNode(node) {
-            var processchildren = true;
+            var processChildrenFlag = true;
 
+            // If node is clickable, store it in clickObjects
             if (node.onclick != undefined) {
-                UDAAddNewElement(node);
+                UDAAddNode(node);
             }
 
+            // Write a separate method to "detectNodeType". We will eventually use ML to detect node-types
             // switched to switch case condition from if condition
             if (node.tagName) {
                 switch (node.tagName.toLowerCase()) {
                     case 'a':
                         if (node.href !== undefined) {
-                            UDAAddNewElement(node);
+                            UDAAddNode(node);
                         }
                         break;
                     case 'input':
                     case 'textarea':
                     case 'option':
                     case 'select':
-                        UDAAddNewElement(node);
+                        UDAAddNode(node);
                         break;
                     case 'button':
                         if (node.hasAttribute('ng-click') || node.hasAttribute('onclick')) {
-                            UDAAddNewElement(node);
+                            UDAAddNode(node);
                         } else if (node.hasAttribute('type') && node.getAttribute('type') === 'submit') {
-                            UDAAddNewElement(node);
+                            UDAAddNode(node);
                         } else if (node.classList && (node.classList.contains('expand-button') || node.classList.contains('btn-pill'))) {
-                            UDAAddNewElement(node);
+                            UDAAddNode(node);
                         } else {
                             UDAConsoleLogger.info({node: node});
                         }
                         break;
                     case 'span':
                         if (node.classList && node.classList.contains('select2-selection')) {
-                            UDAAddNewElement(node);
+                            UDAAddNode(node);
                         } else if (node.hasAttribute('ng-click') || node.hasAttribute('onclick')){
-                            UDAAddNewElement(node);
+                            UDAAddNode(node);
                         }
                         break;
                     // fix for editor issue
                     case 'ckeditor':
-                        UDAAddNewElement(node);
+                        UDAAddNode(node);
                         break;
                     case 'div':
                         if(node.hasAttribute('ng-click') || node.hasAttribute('onclick')){
-                            UDAAddNewElement(node);
+                            UDAAddNode(node);
                         }
                         break;
                 }
             }
 
+            // Bootstrap specific
             if (node.classList && node.classList.contains("dropdown-toggle")) {
-                UDAAddNewElement(node);
+                UDAAddNode(node);
             }
 
-            if (node.children && processchildren) {
+            // If the node has child nodes, process each child recursively
+            if (node.children && processChildrenFlag) {
                 for (var i = 0; i < node.children.length; i++) {
                     UDAProcessNode(node.children[i]);
                 }
             }
         }
 
-        // removal of clickbojects via mutation observer
-        function UDAProcessRemovedNode(node) {
+        // removal of clickOjects via mutation observer
+        function UDARemoveNode(node) {
             for (var j = 0; j < UDAClickObjects.length; j++) {
                 if (node.isEqualNode(UDAClickObjects[j].element)) {
-                    let addtoremovenodes = true;
-                    removedclickobjectcounter:
+                    let addToRemoveNodesFlag = true;
+                    removedClickObjectCounter:
                         for (var k = 0; k < UDARemovedClickObjects.length; k++) {
                             if (node.isEqualNode(UDARemovedClickObjects[k].element)) {
-                                addtoremovenodes = false;
+                                addToRemoveNodesFlag = false;
                                 break;
                             }
                         }
-                    if (addtoremovenodes) {
+                    if (addToRemoveNodesFlag) {
                         UDARemovedClickObjects.push(UDAClickObjects[j]);
                     }
                     UDAClickObjects.splice(j, 1);
@@ -482,18 +491,19 @@ var UDALinkScriptloaded = UDALinkScriptloaded || false;
             }
             if (node.children) {
                 for (var i = 0; i < node.children.length; i++) {
-                    UDAProcessRemovedNode(node.children[i]);
+                    UDARemoveNode(node.children[i]);
                 }
             }
         }
 
-        //mutation observer initialization and adding the logic to process the clickobjects
+        // Single Page Applications etc load new nodes on the fly. We need to detect and process them
+        // Mutation observer initialization and adding the logic to process the clickobjects
         var dsa_observer = new MutationObserver(function (mutations) {
             // UDAConsoleLogger.info('------------ detected clicked objects-------------');
             // UDAConsoleLogger.info(UDAClickObjects);
             mutations.forEach(function (mutation) {
                 if (mutation.removedNodes.length) {
-                    [].some.call(mutation.removedNodes, UDAProcessRemovedNode);
+                    [].some.call(mutation.removedNodes, UDARemoveNode);
                 }
                 if (!mutation.addedNodes.length) {
                     return;
