@@ -240,6 +240,8 @@ if (typeof UDAPluginSDK === 'undefined') {
 			],
 		cspUserAcceptance: {storageName: 'uda-csp-user-consent',data:{proceed: true}},
 		screenAcceptance: {storageName: 'uda-user-screen-consent',data:{proceed: true}},
+		// analytics: {src: 'https://www.googletagmanager.com/gtag/js?id=G-9WBDNZZ0RV', streamId: 'G-9WBDNZZ0RV'},
+		analytics: {src: 'https://www.google-analytics.com/analytics.js', streamId: 'G-9WBDNZZ0RV'},
 		inArray:function(value, object){
 			return jQuery.inArray(value, object);
 		},
@@ -366,6 +368,33 @@ if (typeof UDAPluginSDK === 'undefined') {
 				this.totalotherScripts++;
 				this.loadOtherScript(this.extensionpath+"js/popper.min.js");
 			}
+
+			/**
+			 * Adding analytics script
+			 */
+			this.googleAnalytics();
+
+		},
+		/**
+		 * google analytics script
+		 */
+		googleAnalytics: function() {
+			if(typeof ga != 'undefined'){
+				ga('config', UDAPluginSDK.analytics.streamId, 'auto');
+				ga('set', 'checkProtocolTask', null); // Disables file protocol checking.
+				ga('send', 'pageview', '/udan');
+			} else {
+				(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+					(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+					m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+				})(window,document,'script',UDAPluginSDK.analytics.src,'ga');
+				ga('create', UDAPluginSDK.analytics.streamId, 'auto');
+				ga('set', 'checkProtocolTask', null); // Disables file protocol checking.
+				ga('send', 'pageview', '/udan');
+			}
+		},
+		gtag: function (){
+			dataLayer.push(arguments);
 		},
 		allReady: function() {
 			// execute the parsing method after everything is ready.
@@ -3470,6 +3499,9 @@ if (typeof UDAPluginSDK === 'undefined') {
 			xhr.open("PUT", this.apihost + "/clickevents/userclick", true);
 			xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
 			xhr.send(JSON.stringify(senddata));
+			// sending data to google analytics
+			// ga('myTracker.send', 'event', 'Video', 'play', 'cats.mp4');
+			ga('send', 'event', clicktype, clickedname, recordid);
 		},
 		showadvancedhtml:function(){
 			this.currentPage='advanced';
