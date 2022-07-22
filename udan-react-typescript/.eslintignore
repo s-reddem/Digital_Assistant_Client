@@ -1,3 +1,6 @@
 *.css
 *.svg
+./udan-react-typescript/package.json
+./udan-react-typescript/package-lock.json
+./udan-react-typescript/src/*.test.js
 src/*.test.js
